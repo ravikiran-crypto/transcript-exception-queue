@@ -1,0 +1,177 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "document",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "text": "=Compare the original transcript against this JSON extraction: {{ $node[\"Merge\"].json[\"text\"] }}\n\nCheck for accuracy and return ONLY a JSON object: \n{ \n  \"is_accurate\": boolean, \n  \"confidence_score\": float (0.0 to 1.0), \n  \"discrepancies\": [\"list any errors\"], \n  \"audit_note\": \"Short summary\" \n}",
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        848,
+        0
+      ],
+      "id": "765f01d8-f344-4003-afbd-8360d3c822cd",
+      "name": "Analyze document",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "aTvzyqk7CrJpLg3L",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "24e71dc8-871a-43c5-8bce-0e0d96070ff0",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "GPT-4O"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "=user",
+              "content": "=Extract data from this transcript text:{{ $json.text }}\n\nReturn the response strictly in JSON format with these 4 keys:\n\nStudentInformation\n\nInstitutionInformation\n\nGPASection\n\nAcademicSection\n\nReturn ONLY the raw JSON object."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        352,
+        0
+      ],
+      "id": "3e1f5164-28c0-4472-bd31-691d71cea6f9",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "XfI5xqtS5peiTwbY",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        656,
+        176
+      ],
+      "id": "85e88192-376e-4679-ba5e-a1a5ad7a4f0c",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "transcript-upload",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "11b90784-6898-422a-8390-3b7133186a19",
+      "name": "Webhook",
+      "webhookId": "e4b1d301-33ec-40c9-9f8b-a4cf9d32063f"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Analyze document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "215e2ed6-b487-470a-bfa0-5014f0b5ad8e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c93ecc1ea13ec4800806d07b8b24459dd173dce09afd654ef2eece158df11cea"
+  },
+  "id": "xoQKtncVZM4jY7SGyO5zz",
+  "tags": []
+}
